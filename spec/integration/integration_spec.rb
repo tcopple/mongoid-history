@@ -66,7 +66,6 @@ describe Mongoid::History do
       end
 
       it "should assign title and body on modified" do
-        p @comment.history_tracks.first
         @comment.history_tracks.first.modified.should == {'title' => "test", 'body' =>  "comment"}
       end
 
@@ -452,7 +451,6 @@ describe Mongoid::History do
         end
 
         it "should undo last version when no parameter is specified" do
-          p @comment.history_tracks.last
           @comment.undo! @user
           @comment.title.should == "Test3"
         end
