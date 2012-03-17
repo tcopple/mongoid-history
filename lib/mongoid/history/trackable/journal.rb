@@ -43,7 +43,7 @@ module Mongoid::History::Trackable
         original = {}
         modified = {}
 
-        Hash[changes].each_pair do |k, v|
+        changes.each_pair do |k, v|
           o, m = v
           original[k] = o unless o.nil?
           modified[k] = m unless m.nil?
