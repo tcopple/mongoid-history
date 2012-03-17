@@ -72,11 +72,11 @@ module Mongoid::History::Trackable
     end
 
     def tracking?
-      Thread.current[track_history_flag]
+      Thread.current[track_name]
     end
 
     def tracking=(v)
-      Thread.current[track_history_flag] = !!v
+      Thread.current[track_name] = !!v
     end
 
     def enable_tracking!

@@ -1,4 +1,4 @@
-module Mongoid::History
+module Mongoid::History::Trackable
   class AssociationChain
     class Node
       attr_reader :doc

@@ -1,10 +1,9 @@
 require 'spec_helper'
-require 'mongoid/history/association_chain'
 
-describe Mongoid::History::AssociationChain do
+describe Mongoid::History::Trackable::AssociationChain do
   let(:subject) { chain }
-  let(:chain)   { Mongoid::History::AssociationChain.new doc }
-  let(:root)    { Mongoid::History::AssociationChain::Node.new doc }
+  let(:chain)   { Mongoid::History::Trackable::AssociationChain.new doc }
+  let(:root)    { Mongoid::History::Trackable::AssociationChain::Node.new doc }
   let(:doc)     { baz }
 
   let(:foo)     { Foo.new }

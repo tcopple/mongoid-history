@@ -1,5 +1,5 @@
 # extract modified and original fields
-module Mongoid::History
+module Mongoid::History::Trackable
   class Journal
     attr_reader :doc
     delegate    :results, :to => "@current_state"

@@ -1,5 +1,5 @@
-module Mongoid::History
-  class Tracker
+module Mongoid::History::Trackable
+  class Proxy
     attr_accessor :doc, :association_chain
 
     def initialize(doc)
@@ -20,8 +20,8 @@ module Mongoid::History
     end
 
     def can_track?(action)
-      return tracking? unless action == :update
-      tracking? && doc.changed.blank?
+      return meta.tracking? unless action == :update
+      meta.tracking? && doc.changed.blank?
     end
 
     def track!(action)
@@ -33,8 +33,8 @@ module Mongoid::History
     def tracker_attributes(method)
       journal.on(method).results.merge({
         :association_chain  => association_chain.to_a,
-        :scope              => scope,
-        :modifier           => doc.send modifier_field,
+        :scope              => meta.scope,
+        :modifier           => doc.send(modifier_field),
         :version            => doc_version,
         :action             => action
       })
@@ -42,16 +42,16 @@ module Mongoid::History
 
     def history
       meta.tracker.where(
-        :scope              => scope,
+        :scope              => meta.scope,
         :association_chain  => association_chain.to_a
       )
     end
 
-    def visit_undo!
+    def undo!(*args)
 
     end
 
-    def visit_redo!
+    def redo!(*args)
 
     end
   end

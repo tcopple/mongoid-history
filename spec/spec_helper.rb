@@ -3,10 +3,10 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 
 require 'rspec'
 require 'mongoid'
-#require 'mongoid-history'
+require 'mongoid-history'
 require 'database_cleaner'
 
-Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
+Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].sort.each {|f| require f}
 
 RSpec.configure do |config|
   config.before(:suite) do

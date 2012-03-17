@@ -1,53 +1,53 @@
-module Mongoid::History
-  class Trackable
-    module InstanceMethods
-      #  undo :from => 1, :to => 5
-      #  undo 4
-      #  undo :last => 10
-      def undo!(modifier, options_or_version=nil)
-        versions = get_versions_criteria(options_or_version).to_a
-        versions.sort!{|v1, v2| v2.version <=> v1.version}
+module Mongoid::History::Trackable
+  extend ActiveSupport::Concern
 
-        versions.each do |v|
-          undo_attr = v.undo_attr(modifier)
-          self.attributes = v.undo_attr(modifier)
-        end
-        save!
-      end
+  module ClassMethods
+    def track_history(opts={})
+      meta = Mongoid::History::Trackable::Metadata.new(self, opts)
+      Mongoid::History.register(self.name, meta)
 
-      def redo!(modifier, options_or_version=nil)
-        versions = get_versions_criteria(options_or_version).to_a
-        versions.sort!{|v1, v2| v1.version <=> v2.version}
+      field meta.version_field, :type => Integer
+      referenced_in meta.modifier_field, :class_name => meta.modifier_class_name
 
-        versions.each do |v|
-          redo_attr = v.redo_attr(modifier)
-          self.attributes = redo_attr
-        end
-        save!
-      end
-
-    private
-      def get_versions_criteria(options_or_version)
-        if options_or_version.is_a? Hash
-          options = options_or_version
-          if options[:from] && options[:to]
-            lower = options[:from] >= options[:to] ? options[:to] : options[:from]
-            upper = options[:from] <  options[:to] ? options[:to] : options[:from]
-            versions = history_tracks.where( :version.in => (lower .. upper).to_a )
-          elsif options[:last]
-            versions = history_tracks.limit( options[:last] )
-          else
-            raise "Invalid options, please specify (:from / :to) keys or :last key."
-          end
-        else
-          options_or_version = options_or_version.to_a if options_or_version.is_a?(Range)
-          version_field_name = history_trackable_options[:version_field]
-          version = options_or_version || self.attributes[version_field_name] || self.attributes[version_field_name.to_s]
-          version = [ version ].flatten
-          versions = history_tracks.where(:version.in => version)
-        end
-        versions.desc(:version)
-      end
+      include MyInstanceMethods
+      extend  SingletonMethods
+      before_update     :track_update
+      before_create     :track_create
+      before_destroy    :track_destroy
     end
+  end
+
+  module MyInstanceMethods
+    def trackable_proxy
+      @trackable_proxy ||= Mongoid::History::Trackable::Proxy.new(self)
+    end
+
+    def track_update
+      trackable_proxy.track!('update')
+    end
+
+    def track_create
+      trackable_proxy.track!('create')
+    end
+
+    def track_destroy
+      trackable_proxy.track!('destroy')
+    end
+
+    def undo!(*args)
+      trackable_proxy.undo!(*args)
+    end
+
+    def redo!(*args)
+      trackable_proxy.redo!(*args)
+    end
+
+    def history_tracks
+      trackable_proxy.history
+    end
+
+  end
+
+  module SingletonMethods
   end
 end
