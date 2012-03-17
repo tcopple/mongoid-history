@@ -3,7 +3,7 @@ module Mongoid::History::Trackable
   class Metadata
     DEFAULT_OPTIONS = {
       :on             =>  :all,
-      :except         =>  [:created_at, :updated_at],
+      :except         =>  [:_id, :id, :created_at, :updated_at],
       :modifier_field =>  :modifier,
       :version_field  =>  :version,
       :track_create   =>  false,
@@ -19,7 +19,7 @@ module Mongoid::History::Trackable
     end
 
     def normalize_fields(*fields)
-      fields.flatten.unique.compact.map(&:to_sym)
+      fields.flatten.uniq.compact.map(&:to_sym)
     end
 
     def except_fields
@@ -27,8 +27,7 @@ module Mongoid::History::Trackable
         options[:except],   # user configured or default except fields
         version_field,      # contains current version
         modifier_id_field,  # contains the last modifier who is responsible for the change
-        :_id,               # unique id
-        :id                 # not sure if this is needed, but just in case...
+        DEFAULT_OPTIONS[:except]
       )
     end
 
@@ -75,16 +74,20 @@ module Mongoid::History::Trackable
       Thread.current[track_name]
     end
 
+    def track?(action)
+      !!(tracking? && options["track_#{action}".to_sym])
+    end
+
     def tracking=(v)
       Thread.current[track_name] = !!v
     end
 
     def enable_tracking!
-      tracking = true
+      self.tracking = true
     end
 
     def disable_tracking!
-      tracking = false
+      self.tracking = false
     end
 
     def track_name

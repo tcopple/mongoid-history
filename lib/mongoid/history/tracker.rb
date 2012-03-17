@@ -43,10 +43,14 @@ module Mongoid::History
       end
     end
 
+    def meta
+      Mongoid::History.metadata(trackable.class.name)
+    end
+
     def undo_attr(modifier)
       undo_hash = affected.easy_unmerge(modified)
       undo_hash.easy_merge!(original)
-      modifier_field = trackable.history_trackable_options[:modifier_field]
+      modifier_field = meta.modifier_field
       undo_hash[modifier_field] = modifier
       undo_hash
     end
@@ -54,7 +58,7 @@ module Mongoid::History
     def redo_attr(modifier)
       redo_hash = affected.easy_unmerge(original)
       redo_hash.easy_merge!(modified)
-      modifier_field = trackable.history_trackable_options[:modifier_field]
+      modifier_field = meta.modifier_field
       redo_hash[modifier_field] = modifier
       redo_hash
     end
@@ -77,8 +81,10 @@ module Mongoid::History
 
 
     def affected
-      @affected ||= (modified.keys | original.keys).inject({}){ |h,k| h[k] =
-        trackable ? trackable.attributes[k] : modified[k]; h}
+      @affected ||= (modified.keys | original.keys).inject({})do |h,k|
+        h[k] = trackable ? trackable.attributes[k] : modified[k]
+        h
+      end
     end
 
 private

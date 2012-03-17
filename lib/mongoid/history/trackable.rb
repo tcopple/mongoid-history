@@ -10,7 +10,6 @@ module Mongoid::History::Trackable
       referenced_in meta.modifier_field, :class_name => meta.modifier_class_name
 
       include MyInstanceMethods
-      extend  SingletonMethods
       before_update     :track_update
       before_create     :track_create
       before_destroy    :track_destroy
@@ -23,31 +22,27 @@ module Mongoid::History::Trackable
     end
 
     def track_update
-      trackable_proxy.track!('update')
+      trackable_proxy.track!(:update)
     end
 
     def track_create
-      trackable_proxy.track!('create')
+      trackable_proxy.track!(:create)
     end
 
     def track_destroy
-      trackable_proxy.track!('destroy')
+      trackable_proxy.track!(:destroy)
     end
 
-    def undo!(*args)
-      trackable_proxy.undo!(*args)
+    def undo!(modifier, options_or_version=nil)
+      trackable_proxy.undo!(modifier, options_or_version)
     end
 
-    def redo!(*args)
-      trackable_proxy.redo!(*args)
+    def redo!(modifier, options_or_version=nil)
+      trackable_proxy.redo!(modifier, options_or_version)
     end
 
     def history_tracks
       trackable_proxy.history
     end
-
-  end
-
-  module SingletonMethods
   end
 end

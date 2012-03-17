@@ -11,7 +11,7 @@ module Mongoid::History::Trackable
     end
 
     def state_class(name)
-      "::Mongoid::History::Journal::#{name.classify}".constantize
+      "Mongoid::History::Trackable::Journal::#{name.to_s.classify}".constantize
     end
 
     # doc.journal.on(:create).results
@@ -42,6 +42,7 @@ module Mongoid::History::Trackable
       def results
         original = {}
         modified = {}
+
         changes.each_pair do |k, v|
           o, m = v
           original[k] = o unless o.nil?
@@ -49,8 +50,6 @@ module Mongoid::History::Trackable
         end
 
         original, modified = original.easy_diff modified
-
-        {:original => original, :modified => modified }
       end
 
       def changes
@@ -59,9 +58,9 @@ module Mongoid::History::Trackable
 
       def sanitize(change_set)
         if meta.track_all_fields?
-          change_set.reject{ |k, v| meta.except_fields.include?(k) }
+          change_set.reject{ |k, v| meta.except_fields.include?(k.to_sym) }
         else
-          change_set.reject{ |k, v| !meta.only_fields.include?(k)  }
+          change_set.select{ |k, v| meta.only_fields.include?(k.to_sym)  }
         end
       end
     end
@@ -71,7 +70,7 @@ module Mongoid::History::Trackable
     class Destroy < State
       # Do not sanitize, keep all attributes.
       def results
-        {:original => {}, :modified => doc.attribute }
+        [ {}, doc.attributes ]
       end
     end
   end

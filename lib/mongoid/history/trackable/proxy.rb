@@ -4,7 +4,14 @@ module Mongoid::History::Trackable
 
     def initialize(doc)
       @doc = doc
-      @association_chain = AssociationChain.new(doc)
+    end
+
+    def journal
+      @journal ||= Journal.new(doc)
+    end
+
+    def association_chain
+      @association_chain ||= AssociationChain.new(doc)
     end
 
     def meta
@@ -12,47 +19,93 @@ module Mongoid::History::Trackable
     end
 
     def doc_version
-      doc.send(meta.version_field || 0)
+      doc.send(meta.version_field) || 0
     end
 
     def increment_doc_version
-      doc.send "#{meta.version_field}=", doc_version+1
+      doc.send "#{meta.version_field}=", doc_version + 1
     end
 
-    def can_track?(action)
-      return meta.tracking? unless action == :update
-      meta.tracking? && doc.changed.blank?
+    def track?(action)
+      return meta.track?(action) if action != :update
+      meta.track?(action) && doc.changed?
     end
 
     def track!(action)
-      return unless can_track?(action)
+      return unless track?(action)
       increment_doc_version
-      meta.tracker.create!(tracker_attributes(action))
+      attributes = tracker_attributes(action)
+      meta.tracker.create!(attributes) if attributes
     end
 
-    def tracker_attributes(method)
-      journal.on(method).results.merge({
+    def tracker_attributes(action)
+      original, modified = journal.on(action).results
+
+      return if original.blank? && modified.blank?
+
+      {
         :association_chain  => association_chain.to_a,
         :scope              => meta.scope,
-        :modifier           => doc.send(modifier_field),
+        :original           => original,
+        :modified           => modified,
+        :modifier           => doc.send(meta.modifier_field),
         :version            => doc_version,
         :action             => action
-      })
+      }
     end
 
     def history
       meta.tracker.where(
         :scope              => meta.scope,
-        :association_chain  => association_chain.to_a
+        :association_chain  => association_chain.root.to_hash
       )
     end
 
-    def undo!(*args)
+    def undo!(modifier, options_or_version)
+      versions = get_versions_criteria(options_or_version).to_a
+      versions.sort!{|v1, v2| v2.version <=> v1.version}
 
+      versions.each do |v|
+        undo_attr = v.undo_attr(modifier)
+        doc.attributes = v.undo_attr(modifier)
+      end
+      doc.save!
     end
 
-    def redo!(*args)
+    def redo!(modifier, options_or_version)
+      versions = get_versions_criteria(options_or_version).to_a
 
+      # do we need this? we are already querying with descending order
+      versions.sort!{|v1, v2| v1.version <=> v2.version}
+
+      versions.each do |v|
+        redo_attr = v.redo_attr(modifier)
+        doc.attributes = redo_attr
+      end
+      doc.save!
     end
+
+    def get_versions_criteria(options_or_version)
+      if options_or_version.is_a? Hash
+        options = options_or_version
+        if options[:from] && options[:to]
+          lower = options[:from] >= options[:to] ? options[:to] : options[:from]
+          upper = options[:from] <  options[:to] ? options[:to] : options[:from]
+          versions = history.where( :version.in => (lower .. upper).to_a )
+        elsif options[:last]
+          versions = history.limit( options[:last] )
+        else
+          raise "Invalid options, please specify (:from / :to) keys or :last key."
+        end
+      else
+        options_or_version = options_or_version.to_a if options_or_version.is_a?(Range)
+        version = options_or_version || doc.send(meta.version_field)
+        version = [ version ].flatten
+        versions = history.where(:version.in => version)
+      end
+      versions.desc(:version)
+    end
+
+
   end
 end

@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Mongoid::History::Trackable::AssociationChain do
   let(:subject) { chain }
   let(:chain)   { Mongoid::History::Trackable::AssociationChain.new doc }
-  let(:root)    { Mongoid::History::Trackable::AssociationChain::Node.new doc }
+  let(:node)    { Mongoid::History::Trackable::AssociationChain::Node.new doc }
   let(:doc)     { baz }
 
   let(:foo)     { Foo.new }
@@ -11,7 +11,7 @@ describe Mongoid::History::Trackable::AssociationChain do
   let(:baz)     { Baz.new :bar => bar }
 
   describe "#initialize" do
-    its(:root) { should == root }
+    its(:node) { should == node }
   end
 
   describe "#nodes" do
@@ -19,15 +19,15 @@ describe Mongoid::History::Trackable::AssociationChain do
 
     it { should be chain.nodes }
 
-    it "should call walk_nodes with root node" do
-      chain.should_receive(:walk_nodes).with(root)
+    it "should call walk_nodes" do
+      chain.should_receive(:walk_nodes).with(node)
       subject
     end
   end
 
   describe "#walk_nodes" do
-    let(:subject) { chain.walk_nodes(root) }
-    it { should == [root.parent.parent, root.parent, root] }
+    let(:subject) { chain.walk_nodes(node) }
+    it { should == [node.parent.parent, node.parent, node] }
   end
 
   describe "#to_a" do

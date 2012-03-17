@@ -42,13 +42,25 @@ module Mongoid::History::Trackable
       end
     end
 
-    attr_reader :root
+    attr_reader :node
     def initialize(doc)
-      @root = Node.new doc
+      @node = Node.new doc
     end
 
     def nodes
-      @nodes ||= walk_nodes(@root)
+      @nodes ||= walk_nodes(node)
+    end
+
+    def parents
+      nodes[0..-1]
+    end
+
+    def parent
+      parents.last
+    end
+
+    def root
+      parents.first
     end
 
     def walk_nodes(node)
@@ -56,7 +68,7 @@ module Mongoid::History::Trackable
     end
 
     def to_a
-      nodes.map(&:to_hash)
+      parents.map(&:to_hash)
     end
   end
 end
