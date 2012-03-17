@@ -49,7 +49,7 @@ module Mongoid::History::Trackable
           modified[k] = m unless m.nil?
         end
 
-        original, modified = original.easy_diff modified
+        original.easy_diff modified
       end
 
       def changes
@@ -70,7 +70,7 @@ module Mongoid::History::Trackable
     class Destroy < State
       # Do not sanitize, keep all attributes.
       def results
-        [ {}, doc.attributes ]
+        [{}, doc.attributes]
       end
     end
   end
