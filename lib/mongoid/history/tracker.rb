@@ -33,9 +33,9 @@ module Mongoid::History
 
     def redo!(modifier)
       if action.to_sym == :destroy
-        re_destroy
+        re_destroy # really?? What good is track destroy TWICE??
       elsif action.to_sym == :create
-        re_create
+        re_create # really?? Creating TWICE...?
       else
         trackable.update_attributes!(redo_attr(modifier))
       end

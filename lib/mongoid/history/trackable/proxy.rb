@@ -11,7 +11,7 @@ module Mongoid::History::Trackable
     end
 
     def association_chain
-      @association_chain ||= AssociationChain.new(doc)
+      @association_chain ||= Mongoid::History::AssociationChain.new(doc)
     end
 
     def meta
