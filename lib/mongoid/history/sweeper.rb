@@ -1,15 +1,23 @@
 module Mongoid::History
   class Sweeper < Mongoid::Observer
+    def self.hook!
+      if defined?(ActionController) and defined?(ActionController::Base)
+        ActionController::Base.class_eval do
+          around_filter Mongoid::History::Sweeper.instance
+        end
+      end
+    end
+
+    def self.observed_classes
+      [Mongoid::History.tracker_class]
+    end
+
     def controller
       Thread.current[:mongoid_history_sweeper_controller]
     end
 
     def controller=(value)
       Thread.current[:mongoid_history_sweeper_controller] = value
-    end
-
-    def self.observed_classes
-      [Mongoid::History.tracker_class]
     end
 
     # Hook to ActionController::Base#around_filter.
@@ -30,7 +38,7 @@ module Mongoid::History
     end
 
     def before_create(track)
-      modifier_field = track.history_trackable_options[:modifier_field]
+      modifier_field = track.trackable.meta.modifier_field
       modifier = track.send modifier_field
       track.send "#{modifier_field}=", current_user unless modifier
     end

@@ -36,7 +36,7 @@ module Mongoid::History::Trackable
 
     class Create < State
       def meta
-        Mongoid::History.metadata(doc.class.name)
+        Mongoid::History.metadata(doc.class)
       end
 
       def results

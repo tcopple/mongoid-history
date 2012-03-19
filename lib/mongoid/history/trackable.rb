@@ -4,7 +4,7 @@ module Mongoid::History::Trackable
   module ClassMethods
     def track_history(opts={})
       meta = Mongoid::History::Trackable::Metadata.new(self, opts)
-      Mongoid::History.register(self.name, meta)
+      Mongoid::History.register(self, meta)
 
       field meta.version_field, :type => Integer
       referenced_in meta.modifier_field, :class_name => meta.modifier_class_name

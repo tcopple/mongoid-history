@@ -6,21 +6,18 @@ module Mongoid::History
       include Mongoid::Document
       include Mongoid::Timestamps
 
-      field       :association_chain,       :type => Array,     :default => []
-      field       :modified,                :type => Hash
-      field       :original,                :type => Hash
-      field       :version,                 :type => Integer
-      field       :action,                  :type => String
-      field       :scope,                   :type => String
-      referenced_in :modifier,              :class_name => Mongoid::History.modifier_class_name
+      field :association_chain, :type => Array, :default => []
+      field :modified,          :type => Hash
+      field :original,          :type => Hash
+      field :version,           :type => Integer
+      field :action,            :type => String
+      field :scope,             :type => String
 
-      Mongoid::History.tracker_class_name = self.name.tableize.singularize.to_sym
+      referenced_in :modifier, :class_name => Mongoid::History.modifier_class_name
 
-      if defined?(ActionController) and defined?(ActionController::Base)
-        ActionController::Base.class_eval do
-          around_filter Mongoid::History::Sweeper.instance
-        end
-      end
+      Mongoid::History.tracker_class = self
+
+      Mongoid::History::Sweeper.hook!
     end
 
     def undo!(modifier)
@@ -44,7 +41,7 @@ module Mongoid::History
     end
 
     def meta
-      Mongoid::History.metadata(trackable.class.name)
+      Mongoid::History.metadata(trackable.class)
     end
 
     def undo_attr(modifier)

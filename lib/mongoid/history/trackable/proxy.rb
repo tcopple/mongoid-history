@@ -15,7 +15,7 @@ module Mongoid::History::Trackable
     end
 
     def meta
-      @meta ||= Mongoid::History.metadata(doc.class.name)
+      @meta ||= Mongoid::History.metadata(doc.class)
     end
 
     def doc_version

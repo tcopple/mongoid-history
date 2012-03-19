@@ -1,6 +1,5 @@
 module Mongoid
   module History
-    mattr_accessor :tracker_class_name
     mattr_accessor :modifier_class_name
     mattr_accessor :current_user_method
     mattr_accessor :trackable_classes
@@ -10,17 +9,21 @@ module Mongoid
     self.current_user_method  = :current_user
 
     def self.tracker_class
-      @tracker_class ||= tracker_class_name.to_s.classify.constantize
+      @tracker_class_name.constantize
     end
 
-    def self.register(model_name, meta)
+    def self.tracker_class=(klass)
+      @tracker_class_name = klass.name
+    end
+
+    def self.register(model, meta)
       self.trackable_classes ||= {}
-      self.trackable_classes[model_name] = meta
+      self.trackable_classes[model.name] = meta
       meta.enable_tracking!
     end
 
-    def self.metadata(model_name)
-      self.trackable_classes[model_name]
+    def self.metadata(model)
+      self.trackable_classes[model.name]
     end
   end
 end
