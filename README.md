@@ -8,14 +8,25 @@ In frustration of Mongoid::Versioning, I created this plugin for tracking histor
 
 This plugin implements multi-user undo, which allows users to undo any history change in any order. Undoing a document also creates a new history track. This is great for auditing and preventing vandalism, but it is probably not suitable for use cases such as a wiki.
 
-Upgrading to mongoid-history-0.2.0
-----------------------------------
+Note
+----
+
+**Please don't use 0.1.8 and 0.2.0.**
+
+They won't work in Rails because there was an error in the sweeper that causes history tracker creation to fail. Upgrade to version 0.2.1 instead as it is able to track history on `embeds_one` documents correctly.
+
+**Refactor in progress**
+
+If you feel brave, you can look at the `refactor` branch and get a feel of what's coming. As I stated many times before, this gem was originally hacked up in one evening, and got patched many times by various fellow users. Thus the code has become pretty unmanagable over time.  The `refactor` branch tries repay this technical debt by breaking things down into smaller class and implement better tests. Stay tuned! :D
+
+Upgrading from mongoid-history-0.1.x to >= 0.2
+------------------------------------------------
 
 If you are upgrade from 0.1.x to version 0.2.x, you need to run the following code **before** you start to use the 0.2.x. This is due to changes in `Mongoid::History::Tracker`'s `association_chain` field.
 
 ```ruby
 Mongoid::History.tracker_class.all.each do |tracker|
-  tracker.association_chain[1,-1].each do |node|
+  tracker.association_chain[1..-1].each do |node|
     node['name'] = node['name'].tableize
   end
   tracker.save!
@@ -24,6 +35,8 @@ end
 
 Install
 -------
+
+Currently this gem supports ruby 1.9.x only. ruby 1.8.7, ree and rubinus are not working right now.
 
 ```
 gem install mongoid-history
