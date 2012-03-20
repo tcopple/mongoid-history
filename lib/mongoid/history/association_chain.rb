@@ -6,7 +6,7 @@ module Mongoid::History
 
     def initialize(doc_or_array)
       if doc_or_array.is_a?(Array)
-        array = doc_or_array
+        @array = doc_or_array
         root = Node.root array.first
         walk_from_root! root, array[1..-1]
       else
@@ -19,8 +19,8 @@ module Mongoid::History
     def walk_from_root!(root, array)
       iterator  = Iterator.new root
       @nodes    = [root]
-      while node = iterator.child(array.shift)
-        @nodes.push node
+      array.each do |hash|
+        @nodes.push = iterator.child(array.shift)
       end
     end
 
@@ -33,7 +33,11 @@ module Mongoid::History
     end
 
     def parents
-      nodes[0..-1]
+      nodes[0..-2]
+    end
+
+    def parent
+      parents.last
     end
 
     def leaf
@@ -44,9 +48,18 @@ module Mongoid::History
       @root ||= nodes.first
     end
 
-    def to_a
-      nodes.map(&:to_hash)
+    def length
+      nodes.length
     end
+
+    def root_class
+      array.first['name'].constantize
+    end
+
+    def array
+      @array ||= nodes.map(&:to_hash)
+    end
+    alias :to_a :array
 
     def serialize(chain)
       chain.to_a if chain

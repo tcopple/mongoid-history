@@ -5,7 +5,8 @@ module Mongoid::History
 
       def self.root(hash)
         klass = hash['name'].constantize
-        new(klass.where(:_id => hash['id']).first)
+        doc = klass.where(:_id => hash['id']).first
+        doc ? new(doc) : nil
       end
 
       def initialize(doc)

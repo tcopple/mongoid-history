@@ -11,7 +11,7 @@ module Mongoid::History
       end
 
       def parent
-        @current_node = current_node.class.new(doc._parent) if parent?
+        @current_node = Node.new(doc._parent) if parent?
       end
 
       def parent?
@@ -19,8 +19,8 @@ module Mongoid::History
       end
 
       def child(hash)
-        doc   = child_doc(hash)
-        @current_node = current_node.class.new(doc) if doc
+        return nil unless hash
+        @current_node = Node.new(child_doc(hash))
       end
 
       def child?(hash)

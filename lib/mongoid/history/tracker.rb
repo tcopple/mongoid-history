@@ -7,7 +7,7 @@ module Mongoid::History
       include Mongoid::Timestamps
       attr_writer :trackable
 
-      field :association_chain, :type => Array, :default => []
+      field :association_chain, :type => Mongoid::History::AssociationChain
       field :modified,          :type => Hash
       field :original,          :type => Hash
       field :version,           :type => Integer
@@ -17,8 +17,7 @@ module Mongoid::History
       referenced_in :modifier, :class_name => Mongoid::History.modifier_class_name
 
       Mongoid::History.tracker_class = self
-
-      Mongoid::History::Sweeper.hook!
+      Sweeper.hook!
     end
 
     def undo!(modifier)
@@ -61,22 +60,13 @@ module Mongoid::History
       redo_hash
     end
 
-    def trackable_root
-      @trackable_root ||= trackable_parents_and_trackable.first
-    end
-
     def trackable
-      @trackable ||= trackable_parents_and_trackable.last
+      association_chain.leaf ? association_chain.leaf.doc : nil
     end
 
-    def trackable_parents
-      @trackable_parents ||= trackable_parents_and_trackable[0, -1]
+    def parent_doc
+      association_chain.parent.doc
     end
-
-    def trackable_parent
-      @trackable_parent ||= trackable_parents_and_trackable[-2]
-    end
-
 
     def affected
       @affected ||= (modified.keys | original.keys).inject({})do |h,k|
@@ -88,7 +78,7 @@ module Mongoid::History
 private
 
     def re_create
-      association_chain.length > 1 ? create_on_parent : create_standalone
+      association_chain.array.length > 1 ? create_on_parent : create_standalone
     end
 
     def re_destroy
@@ -96,63 +86,26 @@ private
     end
 
     def create_standalone
-      class_name = association_chain.first["name"]
-      restored = class_name.constantize.new(modified)
+      p "---------------stand alone"
+      p self
+      restored = association_chain.root_class.new(modified)
       restored.save!
     end
 
     def create_on_parent
-      name = association_chain.last["name"]
-      if embeds_one?(trackable_parent, name)
-        trackable_parent.send("create_#{name}!", modified)
-      elsif embeds_many?(trackable_parent, name)
-         trackable_parent.send(name).create!(modified)
+      itr     = AssociationChain::Iterator.new(association_chain.parent)
+      name    = association_chain.leaf.name
+
+      p "--------------- embedded"
+      p parent_doc
+
+      if itr.embeds_one?(name)
+        parent_doc.send("create_#{name}!", modified)
+      elsif itr.embeds_many?(name)
+        parent_doc.send(name).create!(modified)
       else
         raise "This should never happen. Please report bug!"
       end
     end
-
-    def trackable_parents_and_trackable
-      @trackable_parents_and_trackable ||= traverse_association_chain
-    end
-
-    def relation_of(doc, name)
-      meta = doc.reflect_on_association(name)
-      meta ? meta.relation : nil
-    end
-
-    def embeds_one?(doc, name)
-      relation_of(doc, name) == Mongoid::Relations::Embedded::One
-    end
-
-    def embeds_many?(doc, name)
-      relation_of(doc, name) == Mongoid::Relations::Embedded::Many
-    end
-
-    def traverse_association_chain
-      chain = association_chain.dup
-      doc = nil
-      documents = []
-
-      begin
-        node = chain.shift
-        name = node['name']
-
-        doc = if doc.nil?
-          # root association. First element of the association chain
-          klass = name.classify.constantize
-          klass.where(:_id => node['id']).first
-        elsif embeds_one?(doc, name)
-          doc.send(name)
-        elsif embeds_many?(doc, name)
-          doc.send(name).where(:_id => node['id']).first
-        else
-          raise "This should never happen. Please report bug."
-        end
-        documents << doc
-      end while( !chain.empty? )
-      documents
-    end
-
   end
 end

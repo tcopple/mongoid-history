@@ -94,7 +94,8 @@ describe Mongoid::History do
           {'id' => @post.id, 'name' => "Post"},
           {'id' => @comment.id, 'name' => "comments"}
         ]
-        @comment.history_tracks.first.association_chain.should == expected
+        chain = @comment.history_tracks.first.association_chain.to_a
+        chain.should == expected
       end
     end
 
@@ -171,7 +172,8 @@ describe Mongoid::History do
 
       it "should assign association_chain" do
         @post.update_attributes(:title => "Another Test")
-        @post.history_tracks.last.association_chain.should == [{'id' => @post.id, 'name' => "Post"}]
+        chain = @post.history_tracks.last.association_chain.to_a
+        chain.should == [{'id' => @post.id, 'name' => "Post"}]
       end
 
       it "should exclude defined options" do
