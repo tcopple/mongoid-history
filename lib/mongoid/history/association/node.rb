@@ -1,19 +1,5 @@
 module Mongoid::History::Association
   class Node
-    class << self
-      def parent_association_name(doc)
-        assoc = parent_association
-        assoc && assoc.inverse.to_s
-      end
-
-      def parent_association(doc)
-        return nil unless doc && doc._parent
-        doc.reflect_on_all_associations(:embedded_in).find do |assoc|
-          doc._parent == doc.send(assoc.key)
-        end
-      end
-    end
-
     attr_reader :name, :id, :doc
     def initialize(name, id, doc)
       @name = name
@@ -44,14 +30,6 @@ module Mongoid::History::Association
     def child_association_type(name)
       assoc = child_association(name)
       assoc ? assoc.relation : nil
-    end
-
-    def has_parent?
-      !!doc._parent
-    end
-
-    def parent_id
-      doc._parent && doc._parent.id
     end
   end
 end
