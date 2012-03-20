@@ -11,7 +11,7 @@ module Mongoid::History::Trackable
     end
 
     def association_chain
-      @association_chain ||= Mongoid::History::AssociationChain.new(doc)
+      @association_chain ||= Mongoid::History::Association::Chain.build_from_doc(doc)
     end
 
     def meta
@@ -44,7 +44,7 @@ module Mongoid::History::Trackable
       return if original.blank? && modified.blank?
 
       {
-        :association_chain  => association_chain.to_a,
+        :association_chain  => association_chain,
         :scope              => meta.scope,
         :original           => original,
         :modified           => modified,

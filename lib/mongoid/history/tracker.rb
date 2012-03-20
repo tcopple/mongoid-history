@@ -7,7 +7,7 @@ module Mongoid::History
       include Mongoid::Timestamps
       attr_writer :trackable
 
-      field :association_chain, :type => Mongoid::History::AssociationChain
+      field :association_chain, :type => Mongoid::History::Association::Field
       field :modified,          :type => Hash
       field :original,          :type => Hash
       field :version,           :type => Integer
@@ -61,11 +61,7 @@ module Mongoid::History
     end
 
     def trackable
-      association_chain.leaf ? association_chain.leaf.doc : nil
-    end
-
-    def parent_doc
-      association_chain.parent.doc
+      association_chain.leaf.doc
     end
 
     def affected
@@ -78,7 +74,7 @@ module Mongoid::History
 private
 
     def re_create
-      association_chain.array.length > 1 ? create_on_parent : create_standalone
+      association_chain.length > 1 ? create_on_parent : create_standalone
     end
 
     def re_destroy
@@ -86,18 +82,19 @@ private
     end
 
     def create_standalone
-      restored = association_chain.root_class.new(modified)
+      model = association_chain.root.name.constantize
+      restored = model.new(modified)
       restored.save!
     end
 
     def create_on_parent
-      itr     = AssociationChain::Iterator.new(association_chain.parent)
-      name    = association_chain.leaf.name
+      parent  = association_chain.parent
+      child   = association_chain.leaf
 
-      if itr.embeds_one?(name)
-        parent_doc.send("create_#{name}!", modified)
-      elsif itr.embeds_many?(name)
-        parent_doc.send(name).create!(modified)
+      if parent.embeds_one?(child.name)
+        parent.doc.send("create_#{child.name}!", modified)
+      elsif parent.embeds_many?(child.name)
+        parent.doc.send(child.name).create!(modified)
       else
         raise "This should never happen. Please report bug!"
       end
