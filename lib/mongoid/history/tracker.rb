@@ -86,8 +86,6 @@ private
     end
 
     def create_standalone
-      p "---------------stand alone"
-      p self
       restored = association_chain.root_class.new(modified)
       restored.save!
     end
@@ -95,9 +93,6 @@ private
     def create_on_parent
       itr     = AssociationChain::Iterator.new(association_chain.parent)
       name    = association_chain.leaf.name
-
-      p "--------------- embedded"
-      p parent_doc
 
       if itr.embeds_one?(name)
         parent_doc.send("create_#{name}!", modified)

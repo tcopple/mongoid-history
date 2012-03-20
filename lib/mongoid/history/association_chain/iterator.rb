@@ -11,7 +11,7 @@ module Mongoid::History
       end
 
       def parent
-        @current_node = Node.new(doc._parent) if parent?
+        @current_node = Mongoid::History::AssociationChain::DocumentConverter.new(doc._parent).node if parent?
       end
 
       def parent?
@@ -20,7 +20,7 @@ module Mongoid::History
 
       def child(hash)
         return nil unless hash
-        @current_node = Node.new(child_doc(hash))
+        @current_node = Mongoid::History::AssociationChain::Node.new(hash['name'], hash['id'], child_doc(hash))
       end
 
       def child?(hash)

@@ -11,7 +11,7 @@ module Mongoid::History
         walk_from_root! root, array[1..-1]
       else
         doc = doc_or_array
-        leaf = Node.new doc
+        leaf = DocumentConverter.new(doc).node
         walk_from_leaf! leaf
       end
     end
@@ -20,7 +20,7 @@ module Mongoid::History
       iterator  = Iterator.new root
       @nodes    = [root]
       array.each do |hash|
-        @nodes.push = iterator.child(array.shift)
+        @nodes.push iterator.child(array.shift)
       end
     end
 
