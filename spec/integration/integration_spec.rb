@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Mongoid::History do
   before :all do
     class HistoryTracker
-      include Mongoid::History::Track
+      include Mongoid::History::Tracker
     end
 
     class Post

@@ -1,5 +1,5 @@
 module Mongoid::History
-  module Track
+  module Tracker
     extend ActiveSupport::Concern
 
     included do
