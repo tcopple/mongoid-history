@@ -1,4 +1,4 @@
-module Mongoid::History::Trackable
+module Mongoid::History
   # This is more like a facade ... ?
   class Metadata
     DEFAULT_OPTIONS = {
@@ -11,11 +11,12 @@ module Mongoid::History::Trackable
       :track_destroy  =>  false,
     }
 
-    attr_reader :klass, :options
+    attr_reader :klass, :options, :switch
 
     def initialize(klass, opts={})
       @klass    = klass
       @options  = DEFAULT_OPTIONS.merge opts
+      @switch   = Switch.new(klass)
     end
 
     def normalize_fields(*fields)
@@ -75,23 +76,7 @@ module Mongoid::History::Trackable
     end
 
     def track?(action)
-      !!(tracking? && options["track_#{action}".to_sym])
-    end
-
-    def tracking=(v)
-      Thread.current[track_name] = !!v
-    end
-
-    def enable_tracking!
-      self.tracking = true
-    end
-
-    def disable_tracking!
-      self.tracking = false
-    end
-
-    def track_name
-      "mongoid_history_#{model_name}_trackable_enabled".to_sym
+      switch.on? && !!options["track_#{action}".to_sym]
     end
 
     def disable(&block)

@@ -41,7 +41,7 @@ module Mongoid::History
     end
 
     def meta
-      Mongoid::History.metadata(trackable.class)
+      Mongoid::History.meta(trackable.class)
     end
 
     def undo_attr(modifier)

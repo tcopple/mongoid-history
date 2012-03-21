@@ -1,4 +1,4 @@
-module Mongoid::History::Trackable
+module Mongoid::History
   class Proxy
     attr_accessor :doc, :association_chain
 
@@ -15,7 +15,7 @@ module Mongoid::History::Trackable
     end
 
     def meta
-      @meta ||= Mongoid::History.metadata(doc.class)
+      @meta ||= Mongoid::History.meta(doc.class)
     end
 
     def doc_version

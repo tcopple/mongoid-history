@@ -1,7 +1,7 @@
 class Mongoid::History::Delta
   class CreateState < AbstractState
     def meta
-      Mongoid::History.metadata(doc.class)
+      Mongoid::History.meta(doc.class)
     end
 
     def results

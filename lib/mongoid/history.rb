@@ -2,9 +2,11 @@ module Mongoid
   module History
     mattr_accessor :modifier_class_name
     mattr_accessor :current_user_method
-    mattr_accessor :trackable_classes
+    mattr_accessor :metas
+    mattr_accessor :switches
 
-    self.trackable_classes    = {}
+    self.metas                = {}
+    self.switches             = {}
     self.modifier_class_name  = "User"
     self.current_user_method  = :current_user
 
@@ -16,14 +18,17 @@ module Mongoid
       @tracker_class_name = klass.name
     end
 
-    def self.register(model, meta)
-      self.trackable_classes ||= {}
-      self.trackable_classes[model.name] = meta
-      meta.enable_tracking!
+    def self.register(model, opts)
+      metas[model.name]     = Metadata.new(model, opts)
+      switches[model.name]  = Switch.new(model)
     end
 
-    def self.metadata(model)
-      self.trackable_classes[model.name]
+    def self.meta(model)
+      metas[model.name]
+    end
+
+    def self.switch(model)
+      switches[model.name]
     end
   end
 end

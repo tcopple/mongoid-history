@@ -3,8 +3,9 @@ module Mongoid::History::Trackable
 
   module ClassMethods
     def track_history(opts={})
-      meta = Mongoid::History::Trackable::Metadata.new(self, opts)
-      Mongoid::History.register(self, meta)
+      Mongoid::History.register(self, opts)
+
+      meta = Mongoid::History.meta(self)
 
       field meta.version_field, :type => Integer
       referenced_in meta.modifier_field, :class_name => meta.modifier_class_name
@@ -21,7 +22,7 @@ module Mongoid::History::Trackable
 
   module MyInstanceMethods
     def trackable_proxy
-      @trackable_proxy ||= Mongoid::History::Trackable::Proxy.new(self)
+      @trackable_proxy ||= Mongoid::History::Proxy.new(self)
     end
 
     def undo!(modifier, options_or_version=nil)
