@@ -6,8 +6,8 @@ module Mongoid::History::Trackable
       @doc = doc
     end
 
-    def journal
-      @journal ||= Journal.new(doc)
+    def history_delta
+      @history_delta ||= Mongoid::History::Delta.new(doc)
     end
 
     def association_chain
@@ -39,7 +39,7 @@ module Mongoid::History::Trackable
     end
 
     def tracker_attributes(action)
-      original, modified = journal.on(action).results
+      original, modified = history_delta.on(action).results
 
       return if original.blank? && modified.blank?
 

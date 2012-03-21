@@ -10,27 +10,18 @@ module Mongoid::History::Trackable
       referenced_in meta.modifier_field, :class_name => meta.modifier_class_name
 
       include MyInstanceMethods
-      before_update     :track_update
-      before_create     :track_create
-      before_destroy    :track_destroy
+
+      [:create, :update, :destroy].each do |action|
+        set_callback action, :before do |document|
+          trackable_proxy.track!(action)
+        end
+      end
     end
   end
 
   module MyInstanceMethods
     def trackable_proxy
       @trackable_proxy ||= Mongoid::History::Trackable::Proxy.new(self)
-    end
-
-    def track_update
-      trackable_proxy.track!(:update)
-    end
-
-    def track_create
-      trackable_proxy.track!(:create)
-    end
-
-    def track_destroy
-      trackable_proxy.track!(:destroy)
     end
 
     def undo!(modifier, options_or_version=nil)
