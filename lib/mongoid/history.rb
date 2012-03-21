@@ -19,7 +19,7 @@ module Mongoid
     end
 
     def self.register(model, opts)
-      metas[model.name]     = Metadata.new(model, opts)
+      metas[model.name]     = Meta.new(model, opts)
       switches[model.name]  = Switch.new(model)
     end
 

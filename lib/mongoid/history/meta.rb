@@ -1,6 +1,5 @@
 module Mongoid::History
-  # This is more like a facade ... ?
-  class Metadata
+  class Meta
     DEFAULT_OPTIONS = {
       :on             =>  :all,
       :except         =>  [:_id, :id, :created_at, :updated_at],
