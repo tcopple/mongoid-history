@@ -16,8 +16,8 @@ module Mongoid::History
     # Delta.new(doc).on(:create).results
     def on(name)
       klass = state_class(name)
-      @states[klass] ||= klass.new(doc)
-      @current_state = @states[klass]
+      @states[name] ||= klass.new(doc)
+      @current_state = @states[name]
       self
     end
   end

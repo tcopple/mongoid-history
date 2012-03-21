@@ -1,5 +1,5 @@
 class Mongoid::History::Delta
-  class UpdateState < AbstractState
+  class UpdateState < CreateState
     # empty
   end
 end
