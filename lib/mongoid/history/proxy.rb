@@ -6,52 +6,13 @@ module Mongoid::History
       @doc = doc
     end
 
-    def history_delta
-      @history_delta ||= Mongoid::History::Delta.new(doc)
-    end
-
-    def association_chain
-      @association_chain ||= Mongoid::History::Association::Chain.build_from_doc(doc)
-    end
-
-    def meta
-      @meta ||= Mongoid::History.meta(doc.class)
-    end
-
-    def doc_version
-      doc.send(meta.version_field) || 0
-    end
-
-    def increment_doc_version
-      doc.send "#{meta.version_field}=", doc_version + 1
-    end
-
-    def track?(action)
-      return meta.track?(action) if action != :update
-      meta.track?(action) && doc.changed?
-    end
-
     def track!(action)
       return unless track?(action)
       increment_doc_version
-      attributes = tracker_attributes(action)
-      meta.tracker.create!(attributes) if attributes
-    end
 
-    def tracker_attributes(action)
-      original, modified = history_delta.on(action).results
-
-      return if original.blank? && modified.blank?
-
-      {
-        :association_chain  => association_chain,
-        :scope              => meta.scope,
-        :original           => original,
-        :modified           => modified,
-        :modifier           => doc.send(meta.modifier_field),
-        :version            => doc_version,
-        :action             => action
-      }
+      builder = Mongoid::History::Track::Builder.new(doc, action)
+      track = builder.build
+      track.save! if track
     end
 
     def history
@@ -85,6 +46,25 @@ module Mongoid::History
       doc.save!
     end
 
+    # private methods below
+    def meta
+      @meta ||= Mongoid::History.meta(doc.class)
+    end
+
+    def association_chain
+      @association_chain ||= Association::Chain.build_from_doc(doc)
+    end
+
+    def increment_doc_version
+      version = doc.send meta.version_field
+      doc.send "#{meta.version_field}=", version + 1
+    end
+
+    def track?(action)
+      return meta.track?(action) if action != :update
+      meta.track?(action) && doc.changed?
+    end
+
     def get_versions_criteria(options_or_version)
       if options_or_version.is_a? Hash
         options = options_or_version
@@ -105,7 +85,5 @@ module Mongoid::History
       end
       versions.desc(:version)
     end
-
-
   end
 end

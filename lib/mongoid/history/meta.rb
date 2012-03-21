@@ -70,21 +70,8 @@ module Mongoid::History
       Mongoid::History.tracker_class
     end
 
-    def tracking?
-      Thread.current[track_name]
-    end
-
     def track?(action)
       switch.on? && !!options["track_#{action}".to_sym]
-    end
-
-    def disable(&block)
-      begin
-        disable_tracking!
-        yield
-      ensure
-        enable_tracking!
-      end
     end
   end
 end
