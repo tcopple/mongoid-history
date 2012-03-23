@@ -1,5 +1,7 @@
 class Mongoid::History::Delta
   class AbstractState
+    include Mongoid::History::Helper
+
     attr_reader :doc
     def initialize(doc)
       @doc = doc

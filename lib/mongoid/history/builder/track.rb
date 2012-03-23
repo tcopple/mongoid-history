@@ -1,21 +1,7 @@
-module Mongoid::History::Track
-  class Builder
-    attr_reader :doc, :action
-    def initialize(doc, action)
-      @doc    = doc
-      @action = action
-    end
-
+module Mongoid::History::Builder
+  class Track < Abstract
     def history_delta
       @history_delta ||= Mongoid::History::Delta.new(doc)
-    end
-
-    def association_chain
-      @association_chain ||= Mongoid::History::Association::Chain.build_from_doc(doc)
-    end
-
-    def meta
-      @meta ||= Mongoid::History.meta(doc.class)
     end
 
     def switch

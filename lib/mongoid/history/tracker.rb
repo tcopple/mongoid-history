@@ -40,35 +40,8 @@ module Mongoid::History
       end
     end
 
-    def meta
-      Mongoid::History.meta(trackable.class)
-    end
-
-    def undo_attr(modifier)
-      undo_hash = affected.easy_unmerge(modified)
-      undo_hash.easy_merge!(original)
-      modifier_field = meta.modifier_field
-      undo_hash[modifier_field] = modifier
-      undo_hash
-    end
-
-    def redo_attr(modifier)
-      redo_hash = affected.easy_unmerge(original)
-      redo_hash.easy_merge!(modified)
-      modifier_field = meta.modifier_field
-      redo_hash[modifier_field] = modifier
-      redo_hash
-    end
-
     def trackable
       association_chain.leaf.doc
-    end
-
-    def affected
-      @affected ||= (modified.keys | original.keys).inject({})do |h,k|
-        h[k] = trackable ? trackable.attributes[k] : modified[k]
-        h
-      end
     end
 
 private

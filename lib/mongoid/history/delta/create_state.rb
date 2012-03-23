@@ -1,9 +1,5 @@
 class Mongoid::History::Delta
   class CreateState < AbstractState
-    def meta
-      Mongoid::History.meta(doc.class)
-    end
-
     def results
       original = {}
       modified = {}
