@@ -1,136 +1,119 @@
+require 'state_machine/core'
+
 module Mongoid::History::Operation
-  class Redo < Operation
+  class Redo < Abstract
+    extend StateMachine::MacroMethods
+
+    state_machine :state, :initial => :pending do
+      event :prepare do
+        transition :pending => :persisted,    :if     => :doc_persisted?
+        transition :pending => :unpersisted,  :uless  => :doc_persisted?
+      end
+
+      event :create do
+        transition :unpersisted => :persisted
+      end
+
+      event :update do
+        transition :persisted => :persisted
+      end
+
+      event :destroy do
+        transition :persisted => :unpersisted
+      end
+
+      after_transition :on => [:create, :upate], :do => :build_attributes
+      after_transition :on => :destroy, :do => :clear_attributes
+    end
+
+    def execute!(modifier, versions)
+      @tracks   = build_tracks(versions)
+      @modifer  = modifier
+      @attributes = {}
+
+      prepare!
+      run!
+      commit!
+
+      @doc
+    end
+
+    def current_action
+      (@current_track.action || 'update').to_sym
+    end
+
+    def doc_persisted?
+      doc && doc.persisted?
+    end
+
+    def build_attributes
+      @attributes.merge! Mongoid::History::Builder::RedoAttributes.new(doc).build(@current_track)
+    end
+
     def build_tracks(versions)
       Mongoid::History::Builder::TrackQuery.new(doc).build(versions)
     end
 
-    def build_attributes(track)
-      Mongoid::History::Builder::RedoAttributes.new(doc).build(track)
+    def clear_attributes
+      @attributes = nil
     end
 
-    def attributes(tracks)
-      tracks.inject({}) do |attributes, track|
-        attributes.merge! build_attributes(track)
+    def assign_modifier
+      @attributes[meta.modifier_field] = @modifier
+    end
+
+    def run!
+      until @tracks.empty?
+        @current_track = @tracks.shift
+        begin
+          send "#{current_action}!"
+        rescue StateMachine::InvalidTransition
+          raise Mongoid::History::InvalidOperation
+        end
+      end
+      assign_modifier
+    end
+
+    def commit!
+      case current_action
+      when :create
+        re_create!
+      when :destroy
+        re_destroy!
+      else
+        update!
       end
     end
 
-    def execute!(modifier, versions)
-      tracks          = build_tracks(versions)
-      doc.attributes  = attributes(tracks)
-      doc.send("#{meta.modifier_field}=", modifier)
-      doc.save!
+    def re_create!
+      @doc = current_track.association_chain.length > 1 ? create_on_parent! : create_standalone!
+    end
+
+    def create_on_parent!
+      parent = current_track.association_chain.parent
+      child  = current_track.association_chain.leaf
+
+      if parent.embeds_one?(child.name)
+        parent.doc.send("create_#{child.name}!", @attributes)
+      elsif parent.embeds_many?(child.name)
+        parent.doc.send(child.name).create!(@attributes)
+      else
+        raise Mongoid::History::InvalidOperation
+      end
+    end
+
+    def create_standalone!
+      name = current_track.association_chain.leaf.name
+      model = name.constantize
+      model.create!(@attributes)
+    end
+
+    def re_destroy!
+      doc.destroy!
+    end
+
+    def update!
+      @doc.update_attributes!(@attributes)
     end
   end
 end
-
-#################################################################
-# Single Undo: doc could be destroyed or new
-#
-# if track is marked destroyed
-#   do nothing if doc is destroyed or doc is new
-#   create new doc with modified attributes from track.
-#
-# if track is marked created
-#   do nothing if doc is destroyed or doc is new
-#   undo create. ( destroy doc, if not already destroyed )
-#
-# if track is marked updated
-#   Raise error if doc is destroyed or doc is new
-#   build attributes & save
-#
-##################################################################
-# Single Redo: doc could be destroyed  or new
-#
-# if track is marked destroyed
-#   do nothing if doc is destroyed or doc is new
-#   destroy doc
-#
-# if track is marked created
-#   create doc if doc is destroyed or doc is new
-#   do nothing
-#
-# if track is marked updated
-#   raise error if doc is destroyed or doc is new
-#   build attributes & save
-#
-
-# Multi Undo
-#
-# doc state:
-#   persisted
-#   unpersisted
-#
-# doc actions:
-#   create
-#   delete
-#   update
-#
-#                create
-#             <-----------
-#  persisted               unpersisted
-#   | /\      ----------->
-#   |--|         delete
-#    update
-#
-#
-###############################################################
-# Multi Redo
-#
-# doc state:
-#   persisted
-#   unpersisted
-#
-# doc actions:
-#   create
-#   delete
-#   update
-#
-#                create
-#             <-----------
-#  persisted               unpersisted
-#    | |      ----------->
-#    |-|         delete
-#    update
-#
-###################################################################
-# Multi Undo: doc could be destroyed or new
-# if doc is new
-#   raise error
-#
-# if doc is destroyed or nil
-#   raise error if tracks.first is not destroyed
-#
-# else
-#   destroy doc if tracks.last is created
-#   for each track in tracks
-#     merge attribute if track is modified
-#     do nothing if track is
-#
-#
-# if track is marked destroyed
-#   do nothing if doc is destroyed or doc is new
-#   create new doc with modified attributes from track.
-#
-# if track is marked created
-#   do nothing if doc is destroyed or doc is new
-#   undo create. ( destroy doc, if not already destroyed )
-#
-# if track is marked updated
-#   Raise error if doc is destroyed or doc is new
-#   build attributes & save
-#
-###################################################################
-# Multi Redo: doc could be destroyed  or new
-#
-# if track is marked destroyed
-#   do nothing if doc is destroyed or doc is new
-#   destroy doc
-#
-# if track is marked created
-#   create doc if doc is destroyed or doc is new
-#   do nothing
-#
-# if track is marked updated
-#   raise error if doc is destroyed or doc is new
-#   build attributes & save
-#
