@@ -2,7 +2,7 @@ module Mongoid::History
   class Proxy
     include Helper
 
-    attr_accessor :doc, :association_chain
+    attr_accessor :doc
 
     def initialize(doc)
       @doc = doc

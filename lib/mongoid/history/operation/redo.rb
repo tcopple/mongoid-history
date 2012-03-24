@@ -1,5 +1,3 @@
-require 'state_machine/core'
-
 module Mongoid::History::Operation
   class Redo < Abstract
     extend StateMachine::MacroMethods
@@ -51,7 +49,7 @@ module Mongoid::History::Operation
     end
 
     def build_tracks(versions)
-      Mongoid::History::Builder::TrackQuery.new(doc).build(versions)
+      Mongoid::History::Builder::TrackQuery.new(doc).build(versions).to_a
     end
 
     def clear_attributes

@@ -18,8 +18,7 @@ module Mongoid::History::Operation
       return unless track?(action)
       increment_doc_version
 
-      builder = build_track(action)
-      track = builder.build
+      track = build_track(action)
       track.save! if track
     end
   end

@@ -16,7 +16,7 @@ module Mongoid::History::Builder
       doc.send(meta.version_field) || 0
     end
 
-    def attributes
+    def attributes(action)
       original, modified = history_delta.on(action).results
 
       return if original.blank? && modified.blank?
@@ -32,8 +32,8 @@ module Mongoid::History::Builder
       }
     end
 
-    def build
-      attr = attributes
+    def build(action)
+      attr = attributes(action)
       meta.tracker.new(attr) if attr
     end
   end

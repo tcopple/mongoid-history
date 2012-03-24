@@ -5,7 +5,7 @@ module Mongoid::History::Operation
     end
 
     def build_tracks(version)
-      super.invert
+      super.reverse
     end
 
     def commit!
