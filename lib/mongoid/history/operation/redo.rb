@@ -5,7 +5,7 @@ module Mongoid::History::Operation
     state_machine :state, :initial => :pending do
       event :prepare do
         transition :pending => :persisted,    :if     => :doc_persisted?
-        transition :pending => :unpersisted,  :uless  => :doc_persisted?
+        transition :pending => :unpersisted,  :unless => :doc_persisted?
       end
 
       event :create do
