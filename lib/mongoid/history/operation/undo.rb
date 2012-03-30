@@ -4,10 +4,6 @@ module Mongoid::History::Operation
       @attributes.merge! Mongoid::History::Builder::UndoAttributes.new(doc).build(@current_track)
     end
 
-    def build_tracks(version)
-      super.reverse
-    end
-
     def commit!
       case current_action
       when :create

@@ -8,16 +8,21 @@ module Mongoid::History
       @doc = doc
     end
 
+    def build_tracks(versions)
+      versions ||= doc.version
+      Mongoid::History::Builder::TrackQuery.new(doc).build(versions).to_a
+    end
+
     def track!(action)
       Operation::Track.new(doc).execute!(action)
     end
 
-    def undo!(modifier, options_or_version)
-      Operation::Undo.new(doc).execute!(modifier, options_or_version)
+    def undo!(modifier, versions)
+      Operation::Undo.new(doc).execute!(modifier, build_tracks(versions))
     end
 
-    def redo!(modifier, options_or_version)
-      Operation::Redo.new(doc).execute!(modifier, options_or_version)
+    def redo!(modifier, versions)
+      Operation::Redo.new(doc).execute!(modifier, build_tracks(versions))
     end
 
     def history

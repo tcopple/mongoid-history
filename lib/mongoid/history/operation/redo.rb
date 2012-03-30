@@ -24,9 +24,9 @@ module Mongoid::History::Operation
       after_transition :on => :destroy, :do => :clear_attributes
     end
 
-    def execute!(modifier, versions)
-      @tracks   = build_tracks(versions)
-      @modifer  = modifier
+    def execute!(modifier, tracks)
+      @tracks     = tracks
+      @modifer    = modifier
       @attributes = {}
 
       prepare!
@@ -46,10 +46,6 @@ module Mongoid::History::Operation
 
     def build_attributes
       @attributes.merge! Mongoid::History::Builder::RedoAttributes.new(doc).build(@current_track)
-    end
-
-    def build_tracks(versions)
-      Mongoid::History::Builder::TrackQuery.new(doc).build(versions).to_a
     end
 
     def clear_attributes

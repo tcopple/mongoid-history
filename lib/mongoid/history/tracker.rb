@@ -21,11 +21,11 @@ module Mongoid::History
     end
 
     def undo!(modifier)
-      Operation::Undo.new(trackable).execute!(modifier, version)
+      Operation::Undo.new(trackable).execute!(modifier, [self])
     end
 
     def redo!(modifier)
-      Operation::Redo.new(trackable).execute!(modifier, version)
+      Operation::Redo.new(trackable).execute!(modifier, [self])
     end
 
     def trackable
