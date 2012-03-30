@@ -20,7 +20,7 @@ module Mongoid::History::Operation
         transition :persisted => :unpersisted
       end
 
-      after_transition :on => [:create, :upate], :do => :build_attributes
+      after_transition :on => [:create, :update], :do => :build_attributes
       after_transition :on => :destroy, :do => :clear_attributes
     end
 
@@ -45,7 +45,8 @@ module Mongoid::History::Operation
     end
 
     def build_attributes
-      @attributes.merge! Mongoid::History::Builder::RedoAttributes.new(doc).build(@current_track)
+      builder = Mongoid::History::Builder::RedoAttributes.new(doc)
+      @attributes.merge! builder.build(@current_track)
     end
 
     def clear_attributes
@@ -75,12 +76,16 @@ module Mongoid::History::Operation
       when :destroy
         re_destroy!
       else
-        update!
+        update_attributes!
       end
     end
 
     def re_create!
-      @doc = current_track.association_chain.length > 1 ? create_on_parent! : create_standalone!
+      @doc =  if current_track.association_chain.length > 1
+                create_on_parent!
+              else
+                create_standalone!
+              end
     end
 
     def create_on_parent!
@@ -106,7 +111,7 @@ module Mongoid::History::Operation
       doc.destroy!
     end
 
-    def update!
+    def update_attributes!
       @doc.update_attributes!(@attributes)
     end
   end
