@@ -1,33 +1,10 @@
 module Mongoid::History::Operation
   class Redo < Abstract
-    extend StateMachine::MacroMethods
-
-    state_machine :state, :initial => :pending do
-      event :prepare do
-        transition :pending => :persisted,    :if     => :doc_persisted?
-        transition :pending => :unpersisted,  :unless => :doc_persisted?
-      end
-
-      event :create do
-        transition :unpersisted => :persisted
-      end
-
-      event :update do
-        transition :persisted => :persisted
-      end
-
-      event :destroy do
-        transition :persisted => :unpersisted
-      end
-
-      after_transition :on => [:create, :update], :do => :build_attributes
-      after_transition :on => :destroy, :do => :clear_attributes
-    end
-
+    attr_reader :current_track
     def execute!(modifier, tracks)
+      @fsm        = AttributesFSM.new(self, attr_builder)
       @tracks     = tracks
       @modifer    = modifier
-      @attributes = {}
 
       prepare!
       run!
@@ -36,32 +13,15 @@ module Mongoid::History::Operation
       @doc
     end
 
-    def current_action
-      (@current_track.action || 'update').to_sym
-    end
-
-    def doc_persisted?
-      doc && doc.persisted?
-    end
-
-    def build_attributes
-      builder = Mongoid::History::Builder::RedoAttributes.new(doc)
-      @attributes.merge! builder.build(@current_track)
-    end
-
-    def clear_attributes
-      @attributes = nil
-    end
-
-    def assign_modifier
-      @attributes[meta.modifier_field] = @modifier
+    def prepare!
+      @fsm.prepare!
     end
 
     def run!
       until @tracks.empty?
         @current_track = @tracks.shift
         begin
-          send "#{current_action}!"
+          @fsm.send "#{current_action}!"
         rescue StateMachine::InvalidTransition
           raise Mongoid::History::InvalidOperation
         end
@@ -76,8 +36,24 @@ module Mongoid::History::Operation
       when :destroy
         re_destroy!
       else
-        update_attributes!
+        update!
       end
+    end
+
+    def attr_builder
+      Mongoid::History::Builder::RedoAttributes
+    end
+
+    def attributes
+      @fsm.attributes
+    end
+
+    def current_action
+      (@current_track.action || 'update').to_sym
+    end
+
+    def assign_modifier
+      attributes[meta.modifier_field] = @modifier
     end
 
     def re_create!
@@ -93,9 +69,9 @@ module Mongoid::History::Operation
       child  = current_track.association_chain.leaf
 
       if parent.embeds_one?(child.name)
-        parent.doc.send("create_#{child.name}!", @attributes)
+        parent.doc.send("create_#{child.name}!", attributes)
       elsif parent.embeds_many?(child.name)
-        parent.doc.send(child.name).create!(@attributes)
+        parent.doc.send(child.name).create!(attributes)
       else
         raise Mongoid::History::InvalidOperation
       end
@@ -104,15 +80,15 @@ module Mongoid::History::Operation
     def create_standalone!
       name = current_track.association_chain.leaf.name
       model = name.constantize
-      model.create!(@attributes)
+      model.create!(attributes)
     end
 
     def re_destroy!
       doc.destroy!
     end
 
-    def update_attributes!
-      @doc.update_attributes!(@attributes)
+    def update!
+      @doc.update_attributes!(attributes)
     end
   end
 end

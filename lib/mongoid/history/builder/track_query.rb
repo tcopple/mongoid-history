@@ -28,7 +28,7 @@ module Mongoid::History::Builder
         (min..max).to_a
       elsif opts[:last]
         max = doc.send meta.version_field
-        min = max - opts[:last].to_i
+        min = max - opts[:last].to_i + 1
         min = [0, min].max
         (min..max).to_a
       else

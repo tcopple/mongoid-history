@@ -1,7 +1,7 @@
 module Mongoid::History::Operation
   class Undo < Redo
-    def build_attributes
-      @attributes.merge! Mongoid::History::Builder::UndoAttributes.new(doc).build(@current_track)
+    def attr_builder
+      Mongoid::History::Builder::UndoAttributes
     end
 
     def commit!

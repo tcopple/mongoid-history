@@ -18,7 +18,7 @@ module Mongoid::History
     end
 
     def undo!(modifier, versions)
-      Operation::Undo.new(doc).execute!(modifier, build_tracks(versions))
+      Operation::Undo.new(doc).execute!(modifier, build_tracks(versions).reverse)
     end
 
     def redo!(modifier, versions)

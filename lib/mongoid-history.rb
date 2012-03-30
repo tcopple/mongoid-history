@@ -31,6 +31,7 @@ require "#{root}/mongoid/history/delta/update_state"
 require "#{root}/mongoid/history/delta/destroy_state"
 
 # operations
+require "#{root}/mongoid/history/operation/attributes_fsm"
 require "#{root}/mongoid/history/operation/abstract"
 require "#{root}/mongoid/history/operation/redo"
 require "#{root}/mongoid/history/operation/undo"
