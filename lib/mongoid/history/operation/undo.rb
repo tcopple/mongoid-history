@@ -4,6 +4,17 @@ module Mongoid::History::Operation
       Mongoid::History::Builder::UndoAttributes
     end
 
+    def update_fsm
+      case current_action
+      when :create
+        @fsm.destroy!
+      when :destroy
+        @fsm.create!
+      else
+        @fsm.update!
+      end
+    end
+
     def commit!
       case current_action
       when :create

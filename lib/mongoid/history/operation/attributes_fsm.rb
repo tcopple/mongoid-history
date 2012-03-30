@@ -36,7 +36,8 @@ module Mongoid::History::Operation
         transition :persisted => :unpersisted
       end
 
-      after_transition :on => [:create, :update], :do => :build_attributes
+      after_transition :on => :create,  :do => :fill_attributes
+      after_transition :on => :update,  :do => :modify_attributes
       after_transition :on => :destroy, :do => :clear_attributes
     end
 
@@ -44,7 +45,11 @@ module Mongoid::History::Operation
       doc && doc.persisted?
     end
 
-    def build_attributes
+    def fill_attributes
+      @attributes = current_track.modified
+    end
+
+    def modify_attributes
       @attributes.merge! attr_builder.new(doc).build(current_track)
     end
 

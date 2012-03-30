@@ -20,13 +20,14 @@ module Mongoid::History::Association
       model = name.constantize
       doc   = query_doc model, id
 
-      Node.new(name, id, doc)
+      Node.new(name, id, name, doc)
     end
 
     def build_child(parent, hash)
-      name  = hash['name']
-      id    = hash['id']
-      return Node.new name, id, nil unless parent.doc
+      name        = hash['name']
+      id          = hash['id']
+      class_name  = hash['class_name']
+      return Node.new name, id, class_name, nil unless parent.doc
 
       doc   = if parent.embeds_one?(name)
                 parent.doc.send name
@@ -37,7 +38,7 @@ module Mongoid::History::Association
                 nil
               end
 
-      Node.new(name, id, doc)
+      Node.new(name, id, class_name, doc)
     end
 
     def query_doc(model_or_collection, id)

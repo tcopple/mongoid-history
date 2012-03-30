@@ -8,7 +8,8 @@ module Mongoid::History::Association
       return nil unless doc
       name = name(doc)
       id   = doc.id
-      Node.new(name, id, doc)
+      class_name = doc.class.name
+      Node.new(name, id, class_name, doc)
     end
 
     def build

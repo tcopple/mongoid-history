@@ -1,14 +1,15 @@
 module Mongoid::History::Association
   class Node
-    attr_reader :name, :id, :doc
-    def initialize(name, id, doc)
+    attr_reader :name, :id, :class_name, :doc
+    def initialize(name, id, class_name, doc)
       @name = name
+      @class_name = class_name
       @id = id
       @doc = doc
     end
 
     def to_hash
-      { 'name' => name, 'id' => id }
+      { 'name' => name, 'id' => id, 'class_name' => class_name }
     end
 
     def ==(another)

@@ -91,8 +91,8 @@ describe Mongoid::History do
 
       it "should assign association_chain" do
         expected = [
-          {'id' => @post.id, 'name' => "Post"},
-          {'id' => @comment.id, 'name' => "comments"}
+          {'id' => @post.id, 'name' => "Post", 'class_name' => "Post" },
+          {'id' => @comment.id, 'name' => "comments", 'class_name' => "Comment"}
         ]
         chain = @comment.history_tracks.first.association_chain.to_a
         chain.should == expected
@@ -167,7 +167,7 @@ describe Mongoid::History do
       it "should assign association_chain" do
         @post.update_attributes(:title => "Another Test")
         chain = @post.history_tracks.last.association_chain.to_a
-        chain.should == [{'id' => @post.id, 'name' => "Post"}]
+        chain.should == [{'id' => @post.id, 'name' => "Post", 'class_name' => "Post"}]
       end
 
       it "should exclude defined options" do
@@ -312,6 +312,7 @@ describe Mongoid::History do
     describe "on destroy embedded" do
       it "should be possible to re-create destroyed embedded" do
         @comment.destroy
+
         @comment.history_tracks.last.undo!(@user)
         @post.reload
         @post.comments.first.title.should == "test"

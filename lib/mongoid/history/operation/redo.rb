@@ -4,13 +4,22 @@ module Mongoid::History::Operation
     def execute!(modifier, tracks)
       @fsm        = AttributesFSM.new(self, attr_builder)
       @tracks     = tracks
-      @modifer    = modifier
+      @modifier   = modifier
 
       prepare!
       run!
       commit!
 
       @doc
+    end
+
+    def meta
+      @meta ||= Mongoid::History.meta(doc_class)
+    end
+
+    def doc_class
+      ( doc && doc.class ) ||
+        current_track.association_chain.leaf.class_name.constantize
     end
 
     def prepare!
@@ -21,7 +30,7 @@ module Mongoid::History::Operation
       until @tracks.empty?
         @current_track = @tracks.shift
         begin
-          @fsm.send "#{current_action}!"
+          update_fsm
         rescue StateMachine::InvalidTransition
           raise Mongoid::History::InvalidOperation
         end
@@ -37,6 +46,17 @@ module Mongoid::History::Operation
         re_destroy!
       else
         update!
+      end
+    end
+
+    def update_fsm
+      case current_action
+      when :create
+        @fsm.create!
+      when :destroy
+        @fsm.destroy!
+      else
+        @fsm.update!
       end
     end
 
@@ -84,7 +104,7 @@ module Mongoid::History::Operation
     end
 
     def re_destroy!
-      doc.destroy!
+      doc.destroy
     end
 
     def update!
