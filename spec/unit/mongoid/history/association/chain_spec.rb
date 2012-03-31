@@ -41,4 +41,44 @@ describe Mongoid::History::Association::Chain do
     let(:subject) { chain.to_a }
     it { should == chain.map(&:to_hash) }
   end
+
+  describe ".build_from_array" do
+    it "should use ArrayBuilder" do
+      array = []
+
+      array_builder = double('array_builder')
+      Mongoid::History::Association::ArrayBuilder.
+        should_receive(:new).
+        with(array).
+        and_return(array_builder)
+
+      array_builder.
+        should_receive(:build).
+        and_return(chain)
+
+      Mongoid::History::Association::Chain.
+        build_from_array(array).
+        should equal chain
+    end
+  end
+
+  describe ".build_from_doc" do
+    it "should use DocumentBuilder" do
+      doc = window
+
+      doc_builder = double('doc_builder')
+      Mongoid::History::Association::DocumentBuilder.
+        should_receive(:new).
+        with(doc).
+        and_return(doc_builder)
+
+      doc_builder.
+        should_receive(:build).
+        and_return(chain)
+
+      Mongoid::History::Association::Chain.
+        build_from_doc(doc).
+        should equal chain
+    end
+  end
 end
