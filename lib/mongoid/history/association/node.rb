@@ -13,7 +13,10 @@ module Mongoid::History::Association
     end
 
     def ==(another)
-      id.equal?(another.id) && name.equal?(another.name?)
+      id == another.id &&
+        name == another.name &&
+        class_name == another.class_name &&
+        doc == another.doc
     end
 
     def embeds_one?(name)

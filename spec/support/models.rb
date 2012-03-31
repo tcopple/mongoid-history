@@ -1,15 +1,15 @@
-class Foo
+class Car
   include Mongoid::Document
-  embeds_many :bars
+  embeds_many :doors
 end
 
-class Bar
+class Door
   include Mongoid::Document
-  embedded_in :foo
-  embeds_one  :baz
+  embedded_in :car
+  embeds_one  :window
 end
 
-class Baz
+class Window
   include Mongoid::Document
-  embedded_in :bar
+  embedded_in :door
 end
