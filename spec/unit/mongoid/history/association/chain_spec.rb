@@ -1,38 +1,44 @@
 require 'spec_helper'
 
-describe Mongoid::History::Trackable::AssociationChain do
-  let(:subject) { chain }
-  let(:chain)   { Mongoid::History::Trackable::AssociationChain.new doc }
-  let(:node)    { Mongoid::History::Trackable::AssociationChain::Node.new doc }
-  let(:doc)     { baz }
+describe Mongoid::History::Association::Chain do
+  let(:subject)     { chain                                           }
+  let(:chain)       { Mongoid::History::Association::Chain.new        }
+  let(:node_klass)  { Mongoid::History::Association::Node             }
+  let(:car_node)    { node_klass.new 'Car', 1111, 'Car', car          }
+  let(:door_node)   { node_klass.new 'doors', 1112, 'Door', door      }
+  let(:window_node) { node_klass.new 'window', 1234, 'Window', window }
+  let(:car)         { Car.new                                         }
+  let(:door)        { Door.new :car => car                            }
+  let(:window)      { Window.new :door => door                        }
 
-  let(:foo)     { Foo.new }
-  let(:bar)     { Bar.new :foo => foo }
-  let(:baz)     { Baz.new :bar => bar }
-
-  describe "#initialize" do
-    its(:node) { should == node }
+  before do
+    chain << car_node
+    chain << door_node
+    chain << window_node
   end
 
-  describe "#nodes" do
-    let(:subject) { chain.nodes }
-
-    it { should be chain.nodes }
-
-    it "should call walk_nodes" do
-      chain.should_receive(:walk_nodes).with(node)
-      subject
-    end
+  describe "#leaf" do
+    let(:subject) { chain.leaf }
+    it { should == window_node }
   end
 
-  describe "#walk_nodes" do
-    let(:subject) { chain.walk_nodes(node) }
-    it { should == [node.parent.parent, node.parent, node] }
+  describe "#root" do
+    let(:subject) { chain.root }
+    it { should == car_node    }
+  end
+
+  describe "#parents" do
+    let(:subject) { chain.parents }
+    it { should == [car_node, door_node] }
+  end
+
+  describe "#parent" do
+    let(:subject) { chain.parent }
+    it { should == door_node }
   end
 
   describe "#to_a" do
     let(:subject) { chain.to_a }
-
-    it { should == chain.nodes.map(&:to_hash) }
+    it { should == chain.map(&:to_hash) }
   end
 end
